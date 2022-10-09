@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 
@@ -56,7 +57,7 @@ def read_all_files(folder_path, trace_list):
             one_insn = dict()
             for line in t:
                 if line[1] == 'F' and len(one_insn):
-                    one_file[one_insn['F']] = one_insn
+                    one_file[one_insn['F']] = copy.copy(one_insn)
                     one_insn.clear()
                 one_insn[line[1]] = line
         all_result[trace] = one_file
