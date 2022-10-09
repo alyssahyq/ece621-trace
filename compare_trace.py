@@ -37,17 +37,51 @@ def trace_parser(line):
     return result
 
 
+def read_all_files(folder_path, trace_list):
+    # result = {<file_name>:
+    #     {<F line>: {
+    #         'F': <F line>,
+    #         'D': <D line>,
+    #         ...
+    #     }
+    #     ...
+    #     }
+    # ...
+    # }
+    
+    all_result = dict()
+    for trace in trace_list:
+        one_file = dict()
+        with open(os.path.join(folder_path, trace), encoding="utf-8") as t:
+            one_insn = dict()
+            for line in t:
+                if line[1] == 'F' and len(one_insn):
+                    one_file[one_insn['F']] = one_insn
+                    one_insn.clear()
+                one_insn[line[1]] = line
+        all_result[trace] = one_file
+    return all_result
+
+def compare_each_line(all_result, trace_list):
+    for lines in all_result[trace_list[0]]:
+        print(lines)
+    
+
 def main():
     if len(sys.argv) == 1:
         print("Missing option [folder]!")
         print("usage: python compare_trace.py [folder]")
     else:
-        folder_path= sys.argv[1]
+        folder_path = sys.argv[1]
         trace_list = os.listdir(folder_path)
         trace_list = list(filter(lambda x: x[-6:] == '.trace', trace_list))
-        all_result = dict()
-        for trace in trace_list:
-            with open(os.path.join(folder_path, trace), 'r'):
-                
+        if len(trace_list) < 2:
+            print("Cannot compare a single file or no trace files.")
+            exit(0)
+        all_result = read_all_files(folder_path, trace_list)
+        compare_each_line(all_result, trace_list)
+        
+
+
 if __name__ == '__main__':
     main()
