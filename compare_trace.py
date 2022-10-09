@@ -62,9 +62,38 @@ def read_all_files(folder_path, trace_list):
         all_result[trace] = one_file
     return all_result
 
-def compare_each_line(all_result, trace_list):
-    for lines in all_result[trace_list[0]]:
-        print(lines)
+def compare_each_line(all_result, my_trace, folder_path):
+    other_traces = list(all_result.keys())
+    other_traces.remove(my_trace)
+    flag_no_stage = True
+    insn_with_disagreement = set()
+    with open(os.path.join(folder_path, "result_"+my_trace[:-6]+'.txt'), 'w') as r:
+        for my_insn, my_results in all_result[my_trace].items():
+            flag_print_my_result = True
+            for other_trace in other_traces:
+                if my_insn not in all_result[other_trace]:
+                    r.write(my_insn+" is an instruction in "+other_trace)
+                    continue
+                else:
+                    stage_tokens = list(my_results.keys())
+                    for stage_token in stage_tokens:
+                        if stage_token not in all_result[other_trace][my_insn]:
+                            if flag_no_stage:
+                                r.write(other_trace + " doesn't have " + stage_token+ " stage!")
+                                flag_no_stage = False # I don't wanna see endless "no such stage" messages.
+                            continue
+                        else:
+                            if(my_results[stage_token]!= all_result[other_trace][my_insn][stage_token]):
+                                if(flag_print_my_result):
+                                    r.write("\n\nDisagreement on: " + my_insn)
+                                    insn_with_disagreement.add(my_insn.split()[2])
+                                    flag_print_my_result = False
+                                r.write(my_trace + ": " + my_results[stage_token])
+                                r.write(other_trace + ": " + all_result[other_trace][my_insn][stage_token])
+    with open(os.path.join(folder_path, "sum_"+my_trace[:-6]+'.txt'), 'w') as s:
+        for item in insn_with_disagreement:
+            s.write(item+'\n')
+                                
     
 
 def main():
@@ -78,8 +107,16 @@ def main():
         if len(trace_list) < 2:
             print("Cannot compare a single file or no trace files.")
             exit(0)
+        print("Find following trace files in the directory:")
+        for i in range(len(trace_list)):
+            print(i, trace_list[i])
+        
+        my_trace = trace_list[int(input(f"Which one is your trace? (index)  "))]
+        if my_trace not in trace_list:
+            print("Cannot find'", my_trace, "'in the directory.")
+            exit(0)
         all_result = read_all_files(folder_path, trace_list)
-        compare_each_line(all_result, trace_list)
+        compare_each_line(all_result, my_trace, folder_path)
         
 
 
