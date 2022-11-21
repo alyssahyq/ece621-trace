@@ -33,7 +33,22 @@ def trace_parser(line):
         elif( tokens[0] == "[E]" ):
             result["PC"] = tokens[1] 
             result["alu_result"] = bin( int( tokens[2], 16 ) ) 
-            result["branch_taken"] = + bin( int( tokens[3], 16 ) ) 
+            result["branch_taken"] = bin( int( tokens[3], 16 ) ) 
+            return {}
+        # – [M] pc_address memory_address read_write access_size memory_data, and
+        elif( tokens[0] == "[M]" ):
+            result["PC"] = tokens[1] 
+            result["memory_address"] = bin( int( tokens[2], 16 ) ) 
+            result["read_write"] = + bin( int( tokens[3], 16 ) ) 
+            result["access_size"] = + bin( int( tokens[4], 16 ) ) 
+            result["memory_data"] = + bin( int( tokens[5], 16 ) ) 
+            return {}
+        # – [W] pc_address write_enable write_rd data_rd
+        elif( tokens[0] == "[W]" ):
+            result["PC"] = tokens[1] 
+            result["write_enable"] = bin( int( tokens[2], 16 ) ) 
+            result["write_rd"] = + bin( int( tokens[3], 16 ) ) 
+            result["data_rd"] = + bin( int( tokens[4], 16 ) ) 
             return {}
     return result
 
@@ -64,6 +79,14 @@ def read_all_files(folder_path, trace_list):
     return all_result
 
 def compare_each_line(all_result, my_trace, folder_path):
+    field_dict = {
+        '[E]': 'pc_address | alu_result | branch_taken',
+        '[M]': 'pc_address | memory_address | read_write | access_size | memory_data',
+        '[W]': 'pc_address | write_enable | write_rd | data_rd',
+        '[R]': 'addr_rs1 | addr_rs2 | data_rs1 | data_rs2',
+        '[F]': 'pc_address | content',
+        '[D]': 'pc | address | opcode | rd | rs1 | rs2 | funct3 | funct7 | imm | shamt'
+    }
     other_traces = list(all_result.keys())
     other_traces.remove(my_trace)
     flag_no_stage = True
@@ -89,6 +112,7 @@ def compare_each_line(all_result, my_trace, folder_path):
                                     r.write("\n\nDisagreement on: " + my_insn)
                                     insn_with_disagreement.add(my_insn.split()[2])
                                     flag_print_my_result = False
+                                r.write(my_results[stage_token].split()[0] + ": " + field_dict[my_results[stage_token].split()[0]] + '\n')
                                 r.write(my_trace + ": " + my_results[stage_token])
                                 r.write(other_trace + ": " + all_result[other_trace][my_insn][stage_token])
     with open(os.path.join(folder_path, "sum_"+my_trace[:-6]+'.txt'), 'w') as s:
